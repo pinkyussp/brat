@@ -1,0 +1,488 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Brat Text Generator</title>
+<style>
+  :root {
+    --bg: #0e0e0e;
+    --panel: #171717;
+    --line: #2a2a2a;
+    --text: #f2f2f2;
+    --muted: #8a8a8a;
+    --lime: #8ace00;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: Arial, Helvetica, sans-serif; -webkit-font-smoothing: antialiased;
+  }
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 24px; border-bottom: 1px solid var(--line);
+  }
+  header h1 { font-size: 16px; margin: 0; letter-spacing: .3px; }
+  header span { font-size: 12px; color: var(--muted); }
+
+  main {
+    display: grid; grid-template-columns: minmax(0, 1fr) 340px;
+    gap: 24px; padding: 24px; max-width: 1100px; margin: 0 auto;
+  }
+  .stage {
+    position: sticky; top: 24px; align-self: start;
+    display: flex; flex-direction: column; gap: 12px; min-width: 0;
+  }
+  .stage-frame { width: 100%; max-width: 560px; margin: 0 auto; }
+
+  @media (max-width: 860px) {
+    main {
+      grid-template-columns: 1fr;
+      gap: 20px; padding: 16px;
+    }
+    .stage { position: static; }
+    .stage-frame { max-width: 100%; }
+    .panel { width: 100%; }
+    header { padding: 14px 16px; }
+  }
+  .stage-frame {
+    background: #000; border-radius: var(--radius); overflow: hidden;
+    box-shadow: 0 10px 40px rgba(0,0,0,.5);
+  }
+  #preview { display: block; width: 100%; height: auto; }
+  .stage-actions { display: flex; gap: 8px; }
+  .stage-actions .spacer { flex: 1; }
+
+  .panel {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 16px; display: flex;
+    flex-direction: column; gap: 18px; align-self: start;
+  }
+  .group { display: flex; flex-direction: column; gap: 8px; }
+  .group-label {
+    font-size: 11px; text-transform: uppercase; letter-spacing: .8px; color: var(--muted);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .value { color: var(--text); font-variant-numeric: tabular-nums; text-transform: none; letter-spacing: 0; }
+
+  textarea {
+    width: 100%; min-height: 110px; padding: 12px; resize: vertical;
+    font: 15px/1.4 Arial, Helvetica, sans-serif; color: var(--text);
+    background: #101010; border: 1px solid var(--line); border-radius: 8px; outline: none;
+  }
+  textarea:focus { border-color: var(--lime); }
+  input[type=text] {
+    width: 100%; padding: 10px 12px; font: 14px Arial, Helvetica, sans-serif;
+    color: var(--text); background: #101010; border: 1px solid var(--line);
+    border-radius: 8px; outline: none;
+  }
+  input[type=text]:focus { border-color: var(--lime); }
+  .counter { font-size: 11px; color: var(--muted); text-align: right; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip, .seg button, .swatch, .btn {
+    font: 600 12px Arial, Helvetica, sans-serif; color: var(--text);
+    background: #1f1f1f; border: 1px solid var(--line); border-radius: 999px;
+    padding: 7px 12px; cursor: pointer; transition: background .15s, border-color .15s, transform .05s;
+  }
+  .chip:hover, .seg button:hover, .btn:hover { border-color: #444; }
+  .chip:active, .btn:active, .seg button:active { transform: scale(.97); }
+  .seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .seg button { border-radius: 8px; padding: 8px 0; text-align: center; }
+  .seg button.on, .chip.on, .swatch.on {
+    background: var(--text); color: #000; border-color: var(--text);
+  }
+  .toggle { display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
+  .switch {
+    position: relative; width: 38px; height: 22px; border-radius: 999px;
+    background: #2a2a2a; border: none; cursor: pointer; padding: 0;
+  }
+  .switch::after {
+    content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px;
+    border-radius: 50%; background: #bbb; transition: transform .15s, background .15s;
+  }
+  .switch.on { background: var(--lime); }
+  .switch.on::after { transform: translateX(16px); background: #000; }
+
+  .swatches { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .swatch {
+    display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 8px 4px;
+    border-radius: 8px; font-size: 11px;
+  }
+  .dot { width: 22px; height: 22px; border-radius: 50%; border: 1px solid #444; }
+
+  input[type=range] { width: 100%; accent-color: var(--lime); }
+
+  .btn-primary { background: var(--lime); color: #000; border-color: var(--lime); }
+  .btn-primary:hover { border-color: #a6e41a; }
+  .btn-ghost { background: transparent; }
+
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--text); color: #000; padding: 10px 16px; border-radius: 999px;
+    font-size: 13px; font-weight: 600; opacity: 0; pointer-events: none;
+    transition: opacity .2s, transform .2s;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<header>
+  <h1>brat text generator</h1>
+</header>
+
+<main>
+  <section class="stage">
+    <div class="stage-frame">
+      <canvas id="preview" width="540" height="540"></canvas>
+    </div>
+    <div class="stage-actions">
+      <button class="btn btn-ghost" id="reset">reset</button>
+      <div class="spacer"></div>
+      <button class="btn" id="copy">copy image</button>
+      <button class="btn btn-primary" id="download">download png</button>
+    </div>
+  </section>
+
+  <aside class="panel">
+    <div class="group">
+      <div class="group-label">text <span class="value" id="count">0 / 280</span></div>
+      <textarea id="text" maxlength="280" placeholder="type something...">it's a brat summer</textarea>
+      <div class="chips" id="presets">
+        <button class="chip" data-preset="it's a brat summer">brat summer</button>
+        <button class="chip" data-preset="vote for me">vote</button>
+        <button class="chip" data-preset="i am so tired">tired</button>
+        <button class="chip" data-preset="sorry i'm late">late</button>
+        <button class="chip" data-preset="tonight i'm going out">going out</button>
+      </div>
+    </div>
+
+    <div class="group">
+      <div class="group-label">size <span class="value" id="sizeVal">88</span></div>
+      <input id="size" type="range" min="24" max="160" value="88">
+    </div>
+
+    <div class="group">
+      <div class="group-label">blur <span class="value" id="blurVal">0</span></div>
+      <input id="blur" type="range" min="0" max="20" step="0.5" value="0">
+    </div>
+
+    <div class="group">
+      <div class="group-label">align</div>
+      <div class="seg" id="align">
+        <button data-align="left" class="on">left</button>
+        <button data-align="center">center</button>
+        <button data-align="right">right</button>
+      </div>
+    </div>
+
+    <div class="group">
+      <div class="group-label">weight</div>
+      <div class="seg" id="weight">
+        <button data-weight="bold" class="on">bold</button>
+        <button data-weight="italic">italic</button>
+        <button data-weight="regular">regular</button>
+      </div>
+    </div>
+
+    <div class="group">
+      <div class="group-label">line spacing <span class="value" id="spacingVal">0.92</span></div>
+      <input id="spacing" type="range" min="0.7" max="1.4" step="0.02" value="0.92">
+    </div>
+
+    <div class="group">
+      <div class="toggle">
+        <span>outline</span>
+        <button class="switch" id="outline" aria-label="toggle outline"></button>
+      </div>
+      <div class="toggle">
+        <span>shadow</span>
+        <button class="switch" id="shadow" aria-label="toggle shadow"></button>
+      </div>
+    </div>
+
+    <div class="group">
+      <div class="toggle">
+        <span>second line caption</span>
+        <button class="switch" id="captionOn" aria-label="toggle caption"></button>
+      </div>
+      <div class="row" id="captionRow" style="display:none">
+        <input id="caption" type="text" maxlength="60" placeholder="e.g. summer 2026">
+      </div>
+    </div>
+
+    <div class="group">
+      <div class="group-label">background</div>
+      <div class="swatches" id="bg">
+        <button class="swatch on" data-bg="#8ace00" data-ink="#000"><span class="dot" style="background:#8ace00"></span>lime</button>
+        <button class="swatch" data-bg="#ffffff" data-ink="#000"><span class="dot" style="background:#fff"></span>white</button>
+        <button class="swatch" data-bg="#000000" data-ink="#fff"><span class="dot" style="background:#000"></span>black</button>
+        <button class="swatch" data-bg="#ff3ea5" data-ink="#fff"><span class="dot" style="background:#ff3ea5"></span>pink</button>
+      </div>
+    </div>
+
+    <div class="group">
+      <div class="toggle">
+        <span>lowercase</span>
+        <button class="switch on" id="lower" aria-label="toggle lowercase"></button>
+      </div>
+    </div>
+  </aside>
+</main>
+
+<div class="toast" id="toast">copied</div>
+
+<script>
+  const $ = id => document.getElementById(id);
+  const preview = $('preview');
+  const pctx = preview.getContext('2d');
+
+  const state = {
+    text: "it's a brat summer",
+    size: 88,
+    blur: 0,
+    align: 'left',
+    bg: '#8ace00',
+    ink: '#000',
+    lower: true,
+    weight: 'bold',
+    spacing: 0.92,
+    outline: false,
+    shadow: false,
+    caption: '',
+    captionOn: false
+  };
+
+  function fontFor(size) {
+    const style = state.weight === 'italic' ? 'italic ' : '';
+    const weight = state.weight === 'regular' ? 'normal' : 'bold';
+    return `${style}${weight} ${size}px Arial, Helvetica, sans-serif`;
+  }
+  const DEFAULTS = { ...state };
+  const BASE = 1080;
+  const PAD = 80;
+
+  function render(ctx, W) {
+    const k = W / BASE;
+    const fontSize = state.size * k;
+    const pad = PAD * k;
+    const maxWidth = W - pad * 2;
+
+    let text = state.text || '';
+    if (state.lower) text = text.toLowerCase();
+
+    ctx.filter = 'none';
+    ctx.fillStyle = state.bg;
+    ctx.fillRect(0, 0, W, W);
+
+    ctx.font = fontFor(fontSize);
+    const lines = [];
+    for (const para of text.split('\n')) {
+      const words = para.split(/\s+/).filter(Boolean);
+      if (!words.length) { lines.push(''); continue; }
+      let line = words[0];
+      for (let i = 1; i < words.length; i++) {
+        const test = line + ' ' + words[i];
+        if (ctx.measureText(test).width <= maxWidth) line = test;
+        else { lines.push(line); line = words[i]; }
+      }
+      lines.push(line);
+    }
+
+    const lineHeight = fontSize * state.spacing;
+    const blockH = lines.length * lineHeight;
+    let y = (W - blockH) / 2 + lineHeight / 2;
+
+    const layer = document.createElement('canvas');
+    layer.width = W; layer.height = W;
+    const lctx = layer.getContext('2d');
+    lctx.fillStyle = state.ink;
+    lctx.font = fontFor(fontSize);
+    lctx.textBaseline = 'middle';
+
+    const x = state.align === 'left' ? pad
+            : state.align === 'right' ? W - pad
+            : W / 2;
+    lctx.textAlign = state.align;
+
+    if (state.shadow) {
+      lctx.shadowColor = 'rgba(0,0,0,0.35)';
+      lctx.shadowBlur = 24 * k;
+      lctx.shadowOffsetX = 0;
+      lctx.shadowOffsetY = 8 * k;
+    }
+    if (state.outline) {
+      lctx.lineJoin = 'round';
+      lctx.lineWidth = Math.max(2, fontSize * 0.08);
+      lctx.strokeStyle = state.bg;
+    }
+
+    for (const line of lines) {
+      if (state.outline) lctx.strokeText(line, x, y);
+      lctx.fillText(line, x, y);
+      y += lineHeight;
+    }
+
+    lctx.shadowColor = 'transparent';
+    lctx.shadowBlur = 0;
+    lctx.shadowOffsetY = 0;
+
+    if (state.captionOn && state.caption.trim()) {
+      const capSize = fontSize * 0.28;
+      lctx.font = fontFor(capSize);
+      const capText = state.lower ? state.caption.toLowerCase() : state.caption;
+      lctx.fillText(capText, x, W - pad - capSize / 2);
+    }
+
+    const blurPx = state.blur * k;
+    if (blurPx > 0) {
+      if ('filter' in ctx) {
+        ctx.filter = `blur(${blurPx}px)`;
+        ctx.drawImage(layer, 0, 0);
+        ctx.filter = 'none';
+      } else {
+        const steps = Math.max(4, Math.round(blurPx));
+        ctx.globalAlpha = 1 / steps;
+        for (let i = 0; i < steps; i++) {
+          const ox = (Math.random() - 0.5) * blurPx;
+          const oy = (Math.random() - 0.5) * blurPx;
+          ctx.drawImage(layer, ox, oy);
+        }
+        ctx.globalAlpha = 1;
+      }
+    } else {
+      ctx.drawImage(layer, 0, 0);
+    }
+  }
+
+  function redraw() {
+    render(pctx, preview.width);
+    $('count').textContent = `${state.text.length} / 280`;
+    $('sizeVal').textContent = state.size;
+    $('blurVal').textContent = state.blur;
+  }
+
+  function setActive(selector, el) {
+    document.querySelectorAll(selector).forEach(b => b.classList.toggle('on', b === el));
+  }
+
+  function syncControls() {
+    $('text').value = state.text;
+    $('caption').value = state.caption;
+    $('captionOn').classList.toggle('on', state.captionOn);
+    $('captionRow').style.display = state.captionOn ? 'flex' : 'none';
+    $('spacing').value = state.spacing;
+    $('spacingVal').textContent = state.spacing.toFixed(2);
+    $('outline').classList.toggle('on', state.outline);
+    $('shadow').classList.toggle('on', state.shadow);
+    document.querySelectorAll('#weight button').forEach(b =>
+      b.classList.toggle('on', b.dataset.weight === state.weight));
+    $('size').value = state.size;
+    $('blur').value = state.blur;
+    document.querySelectorAll('#align button').forEach(b =>
+      b.classList.toggle('on', b.dataset.align === state.align));
+    document.querySelectorAll('#bg .swatch').forEach(b =>
+      b.classList.toggle('on', b.dataset.bg === state.bg));
+    $('lower').classList.toggle('on', state.lower);
+    redraw();
+  }
+
+  function toast(msg) {
+    const t = $('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => t.classList.remove('show'), 1600);
+  }
+
+  $('text').addEventListener('input', e => { state.text = e.target.value; redraw(); });
+  $('size').addEventListener('input', e => { state.size = Number(e.target.value); redraw(); });
+  $('blur').addEventListener('input', e => { state.blur = Number(e.target.value); redraw(); });
+
+  document.querySelectorAll('#align button').forEach(btn => btn.addEventListener('click', () => {
+    state.align = btn.dataset.align;
+    setActive('#align button', btn);
+    redraw();
+  }));
+
+  document.querySelectorAll('#bg .swatch').forEach(btn => btn.addEventListener('click', () => {
+    state.bg = btn.dataset.bg;
+    state.ink = btn.dataset.ink;
+    setActive('#bg .swatch', btn);
+    redraw();
+  }));
+
+  document.querySelectorAll('#presets .chip').forEach(btn => btn.addEventListener('click', () => {
+    state.text = btn.dataset.preset;
+    syncControls();
+  }));
+
+  $('caption').addEventListener('input', e => { state.caption = e.target.value; redraw(); });
+  $('captionOn').addEventListener('click', () => {
+    state.captionOn = !state.captionOn;
+    syncControls();
+  });
+  $('spacing').addEventListener('input', e => { state.spacing = Number(e.target.value); redraw(); });
+  $('outline').addEventListener('click', () => {
+    state.outline = !state.outline;
+    syncControls();
+  });
+  $('shadow').addEventListener('click', () => {
+    state.shadow = !state.shadow;
+    syncControls();
+  });
+  document.querySelectorAll('#weight button').forEach(btn => btn.addEventListener('click', () => {
+    state.weight = btn.dataset.weight;
+    syncControls();
+  }));
+
+  $('lower').addEventListener('click', () => {
+    state.lower = !state.lower;
+    $('lower').classList.toggle('on', state.lower);
+    redraw();
+  });
+
+  $('reset').addEventListener('click', () => {
+    Object.assign(state, DEFAULTS);
+    syncControls();
+    toast('reset');
+  });
+
+  function exportCanvas() {
+    const out = document.createElement('canvas');
+    out.width = BASE; out.height = BASE;
+    render(out.getContext('2d'), BASE);
+    return out;
+  }
+
+  $('download').addEventListener('click', () => {
+    const link = document.createElement('a');
+    link.download = 'brat.png';
+    link.href = exportCanvas().toDataURL('image/png');
+    link.click();
+    toast('downloaded');
+  });
+
+  $('copy').addEventListener('click', async () => {
+    try {
+      const blob = await new Promise(res => exportCanvas().toBlob(res, 'image/png'));
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+      toast('copied');
+    } catch {
+      toast('copy not supported here, use download');
+    }
+  });
+
+  document.addEventListener('keydown', e => {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
+      e.preventDefault();
+      $('download').click();
+    }
+  });
+
+  document.fonts.ready.then(redraw);
+  syncControls();
+</script>
+</body>
+</html>
