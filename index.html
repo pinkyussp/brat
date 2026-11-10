@@ -152,13 +152,6 @@
     <div class="group">
       <div class="group-label">text <span class="value" id="count">0 / 280</span></div>
       <textarea id="text" maxlength="280" placeholder="type something...">it's a brat summer</textarea>
-      <div class="chips" id="presets">
-        <button class="chip" data-preset="it's a brat summer">brat summer</button>
-        <button class="chip" data-preset="vote for me">vote</button>
-        <button class="chip" data-preset="i am so tired">tired</button>
-        <button class="chip" data-preset="sorry i'm late">late</button>
-        <button class="chip" data-preset="tonight i'm going out">going out</button>
-      </div>
     </div>
 
     <div class="group">
@@ -183,15 +176,20 @@
     <div class="group">
       <div class="group-label">weight</div>
       <div class="seg" id="weight">
-        <button data-weight="bold" class="on">bold</button>
+        <button data-weight="bold">bold</button>
         <button data-weight="italic">italic</button>
-        <button data-weight="regular">regular</button>
+        <button data-weight="regular" class="on">regular</button>
       </div>
     </div>
 
     <div class="group">
       <div class="group-label">line spacing <span class="value" id="spacingVal">1.00</span></div>
       <input id="spacing" type="range" min="0.7" max="1.4" step="0.02" value="1.00">
+    </div>
+
+    <div class="group">
+      <div class="group-label">letter spacing <span class="value" id="trackVal">0</span></div>
+      <input id="tracking" type="range" min="-10" max="40" step="1" value="0">
     </div>
 
     <div class="group">
@@ -267,8 +265,9 @@
     bg: '#8ace00',
     ink: '#000000',
     lower: true,
-    weight: 'bold',
+    weight: 'regular',
     spacing: 1.00,
+    tracking: 0,
     outline: false,
     shadow: false,
     caption: '',
@@ -298,6 +297,7 @@
     ctx.fillRect(0, 0, W, W);
 
     ctx.font = fontFor(fontSize);
+    if ('letterSpacing' in ctx) ctx.letterSpacing = `${state.tracking * k}px`;
     const lines = [];
     for (const para of text.split('\n')) {
       const words = para.split(/\s+/).filter(Boolean);
@@ -321,6 +321,7 @@
     lctx.fillStyle = state.ink;
     lctx.font = fontFor(fontSize);
     lctx.textBaseline = 'middle';
+    if ('letterSpacing' in lctx) lctx.letterSpacing = `${state.tracking * k}px`;
 
     const x = state.align === 'left' ? pad
             : state.align === 'right' ? W - pad
@@ -383,6 +384,7 @@
     $('sizeVal').textContent = state.size;
     $('blurVal').textContent = state.blur;
     $('spacingVal').textContent = state.spacing.toFixed(2);
+    $('trackVal').textContent = state.tracking;
     $('bgHex').textContent = state.bg;
     $('inkHex').textContent = state.ink;
   }
@@ -397,6 +399,7 @@
     $('captionOn').classList.toggle('on', state.captionOn);
     $('captionRow').style.display = state.captionOn ? 'flex' : 'none';
     $('spacing').value = state.spacing;
+    $('tracking').value = state.tracking;
     $('outline').classList.toggle('on', state.outline);
     $('shadow').classList.toggle('on', state.shadow);
     document.querySelectorAll('#weight button').forEach(b =>
@@ -448,17 +451,13 @@
     redraw();
   });
 
-  document.querySelectorAll('#presets .chip').forEach(btn => btn.addEventListener('click', () => {
-    state.text = btn.dataset.preset;
-    syncControls();
-  }));
-
   $('caption').addEventListener('input', e => { state.caption = e.target.value; redraw(); });
   $('captionOn').addEventListener('click', () => {
     state.captionOn = !state.captionOn;
     syncControls();
   });
   $('spacing').addEventListener('input', e => { state.spacing = Number(e.target.value); redraw(); });
+  $('tracking').addEventListener('input', e => { state.tracking = Number(e.target.value); redraw(); });
   $('outline').addEventListener('click', () => {
     state.outline = !state.outline;
     syncControls();
