@@ -24,7 +24,6 @@
     padding: 16px 24px; border-bottom: 1px solid var(--line);
   }
   header h1 { font-size: 16px; margin: 0; letter-spacing: .3px; }
-  header span { font-size: 12px; color: var(--muted); }
 
   main {
     display: grid; grid-template-columns: minmax(0, 1fr) 340px;
@@ -34,25 +33,22 @@
     position: sticky; top: 24px; align-self: start;
     display: flex; flex-direction: column; gap: 12px; min-width: 0;
   }
-  .stage-frame { width: 100%; max-width: 560px; margin: 0 auto; }
-
-  @media (max-width: 860px) {
-    main {
-      grid-template-columns: 1fr;
-      gap: 20px; padding: 16px;
-    }
-    .stage { position: static; }
-    .stage-frame { max-width: 100%; }
-    .panel { width: 100%; }
-    header { padding: 14px 16px; }
-  }
   .stage-frame {
+    width: 100%; max-width: 560px; margin: 0 auto;
     background: #000; border-radius: var(--radius); overflow: hidden;
     box-shadow: 0 10px 40px rgba(0,0,0,.5);
   }
   #preview { display: block; width: 100%; height: auto; }
   .stage-actions { display: flex; gap: 8px; }
   .stage-actions .spacer { flex: 1; }
+
+  @media (max-width: 860px) {
+    main { grid-template-columns: 1fr; gap: 20px; padding: 16px; }
+    .stage { position: static; }
+    .stage-frame { max-width: 100%; }
+    .panel { width: 100%; }
+    header { padding: 14px 16px; }
+  }
 
   .panel {
     background: var(--panel); border: 1px solid var(--line);
@@ -78,7 +74,6 @@
     border-radius: 8px; outline: none;
   }
   input[type=text]:focus { border-color: var(--lime); }
-  .counter { font-size: 11px; color: var(--muted); text-align: right; }
 
   .chips { display: flex; flex-wrap: wrap; gap: 6px; }
   .chip, .seg button, .swatch, .btn {
@@ -86,8 +81,8 @@
     background: #1f1f1f; border: 1px solid var(--line); border-radius: 999px;
     padding: 7px 12px; cursor: pointer; transition: background .15s, border-color .15s, transform .05s;
   }
-  .chip:hover, .seg button:hover, .btn:hover { border-color: #444; }
-  .chip:active, .btn:active, .seg button:active { transform: scale(.97); }
+  .chip:hover, .seg button:hover, .btn:hover, .swatch:hover { border-color: #444; }
+  .chip:active, .btn:active, .seg button:active, .swatch:active { transform: scale(.97); }
   .seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
   .seg button { border-radius: 8px; padding: 8px 0; text-align: center; }
   .seg button.on, .chip.on, .swatch.on {
@@ -111,6 +106,14 @@
     border-radius: 8px; font-size: 11px;
   }
   .dot { width: 22px; height: 22px; border-radius: 50%; border: 1px solid #444; }
+
+  .colors { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .color-field { display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: var(--muted); }
+  .color-field input[type=color] {
+    width: 100%; height: 34px; padding: 2px; border: 1px solid var(--line);
+    border-radius: 8px; background: #101010; cursor: pointer;
+  }
+  .hex { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
 
   input[type=range] { width: 100%; accent-color: var(--lime); }
 
@@ -160,7 +163,7 @@
 
     <div class="group">
       <div class="group-label">size <span class="value" id="sizeVal">88</span></div>
-      <input id="size" type="range" min="24" max="160" value="88">
+      <input id="size" type="range" min="24" max="220" value="88">
     </div>
 
     <div class="group">
@@ -187,8 +190,36 @@
     </div>
 
     <div class="group">
-      <div class="group-label">line spacing <span class="value" id="spacingVal">0.92</span></div>
-      <input id="spacing" type="range" min="0.7" max="1.4" step="0.02" value="0.92">
+      <div class="group-label">line spacing <span class="value" id="spacingVal">1.00</span></div>
+      <input id="spacing" type="range" min="0.7" max="1.4" step="0.02" value="1.00">
+    </div>
+
+    <div class="group">
+      <div class="group-label">background</div>
+      <div class="swatches" id="bg">
+        <button class="swatch" data-bg="#8ace00" data-ink="#000000"><span class="dot" style="background:#8ace00"></span>lime</button>
+        <button class="swatch" data-bg="#ffffff" data-ink="#000000"><span class="dot" style="background:#fff"></span>white</button>
+        <button class="swatch" data-bg="#000000" data-ink="#ffffff"><span class="dot" style="background:#000"></span>black</button>
+        <button class="swatch" data-bg="#ff3ea5" data-ink="#ffffff"><span class="dot" style="background:#ff3ea5"></span>pink</button>
+        <button class="swatch" data-bg="#ff4d2e" data-ink="#000000"><span class="dot" style="background:#ff4d2e"></span>red</button>
+        <button class="swatch" data-bg="#2f6bff" data-ink="#ffffff"><span class="dot" style="background:#2f6bff"></span>blue</button>
+        <button class="swatch" data-bg="#ffd400" data-ink="#000000"><span class="dot" style="background:#ffd400"></span>yellow</button>
+        <button class="swatch" data-bg="#7b3fe4" data-ink="#ffffff"><span class="dot" style="background:#7b3fe4"></span>purple</button>
+      </div>
+    </div>
+
+    <div class="group">
+      <div class="group-label">custom colors</div>
+      <div class="colors">
+        <label class="color-field">background
+          <input type="color" id="bgPicker" value="#8ace00">
+          <span class="hex" id="bgHex">#8ace00</span>
+        </label>
+        <label class="color-field">font
+          <input type="color" id="inkPicker" value="#000000">
+          <span class="hex" id="inkHex">#000000</span>
+        </label>
+      </div>
     </div>
 
     <div class="group">
@@ -209,16 +240,6 @@
       </div>
       <div class="row" id="captionRow" style="display:none">
         <input id="caption" type="text" maxlength="60" placeholder="e.g. summer 2026">
-      </div>
-    </div>
-
-    <div class="group">
-      <div class="group-label">background</div>
-      <div class="swatches" id="bg">
-        <button class="swatch on" data-bg="#8ace00" data-ink="#000"><span class="dot" style="background:#8ace00"></span>lime</button>
-        <button class="swatch" data-bg="#ffffff" data-ink="#000"><span class="dot" style="background:#fff"></span>white</button>
-        <button class="swatch" data-bg="#000000" data-ink="#fff"><span class="dot" style="background:#000"></span>black</button>
-        <button class="swatch" data-bg="#ff3ea5" data-ink="#fff"><span class="dot" style="background:#ff3ea5"></span>pink</button>
       </div>
     </div>
 
@@ -244,10 +265,10 @@
     blur: 0,
     align: 'left',
     bg: '#8ace00',
-    ink: '#000',
+    ink: '#000000',
     lower: true,
     weight: 'bold',
-    spacing: 0.92,
+    spacing: 1.00,
     outline: false,
     shadow: false,
     caption: '',
@@ -361,6 +382,9 @@
     $('count').textContent = `${state.text.length} / 280`;
     $('sizeVal').textContent = state.size;
     $('blurVal').textContent = state.blur;
+    $('spacingVal').textContent = state.spacing.toFixed(2);
+    $('bgHex').textContent = state.bg;
+    $('inkHex').textContent = state.ink;
   }
 
   function setActive(selector, el) {
@@ -373,7 +397,6 @@
     $('captionOn').classList.toggle('on', state.captionOn);
     $('captionRow').style.display = state.captionOn ? 'flex' : 'none';
     $('spacing').value = state.spacing;
-    $('spacingVal').textContent = state.spacing.toFixed(2);
     $('outline').classList.toggle('on', state.outline);
     $('shadow').classList.toggle('on', state.shadow);
     document.querySelectorAll('#weight button').forEach(b =>
@@ -383,7 +406,9 @@
     document.querySelectorAll('#align button').forEach(b =>
       b.classList.toggle('on', b.dataset.align === state.align));
     document.querySelectorAll('#bg .swatch').forEach(b =>
-      b.classList.toggle('on', b.dataset.bg === state.bg));
+      b.classList.toggle('on', b.dataset.bg === state.bg && b.dataset.ink === state.ink));
+    $('bgPicker').value = state.bg;
+    $('inkPicker').value = state.ink;
     $('lower').classList.toggle('on', state.lower);
     redraw();
   }
@@ -409,9 +434,19 @@
   document.querySelectorAll('#bg .swatch').forEach(btn => btn.addEventListener('click', () => {
     state.bg = btn.dataset.bg;
     state.ink = btn.dataset.ink;
-    setActive('#bg .swatch', btn);
-    redraw();
+    syncControls();
   }));
+
+  $('bgPicker').addEventListener('input', e => {
+    state.bg = e.target.value;
+    document.querySelectorAll('#bg .swatch').forEach(b => b.classList.remove('on'));
+    redraw();
+  });
+  $('inkPicker').addEventListener('input', e => {
+    state.ink = e.target.value;
+    document.querySelectorAll('#bg .swatch').forEach(b => b.classList.remove('on'));
+    redraw();
+  });
 
   document.querySelectorAll('#presets .chip').forEach(btn => btn.addEventListener('click', () => {
     state.text = btn.dataset.preset;
